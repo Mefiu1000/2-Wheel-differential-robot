@@ -54,6 +54,7 @@ NVIC.PriorityGroup=NVIC_PRIORITYGROUP_0
 NVIC.SVCall_IRQn=true\:0\:0\:false\:false\:true\:false\:false\:false
 NVIC.SysTick_IRQn=true\:0\:0\:true\:false\:true\:true\:true\:false
 NVIC.TIM1_CC_IRQn=true\:0\:0\:false\:true\:true\:1\:true\:true\:true
+NVIC.USART2_IRQn=true\:0\:0\:false\:true\:true\:2\:true\:true\:true
 NVIC.UsageFault_IRQn=true\:0\:0\:false\:false\:true\:true\:false\:false
 PA10.GPIOParameters=GPIO_Label
 PA10.GPIO_Label=HC-SR04p_TRIG

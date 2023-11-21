@@ -26,6 +26,7 @@
 /* USER CODE BEGIN Includes */
 #include "HCSR04p.h"
 #include "Motors.h"
+#include "Button.h"
 #include <stdbool.h>
 /* USER CODE END Includes */
 
@@ -58,6 +59,7 @@ HCSR04p_t HCSR04p_front;
 bool RobotEnable = false;
 uint32_t Timer_Enable;
 
+Button_t BlueKey;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -108,7 +110,7 @@ int main(void)
   MX_NVIC_Init();
   /* USER CODE BEGIN 2 */
   HCSR04p_Init(&HCSR04p_front, &HCSR04p_TRIGGER_TIMER, HCSR04p_TRIG_CHANNEL, &HCSR04p_ECHO_TIMER, HCSR04p_START_CHANNEL, HCSR04p_STOP_CHANNEL);
-
+  Button_Init(&BlueKey, B1_GPIO_Port, B1_Pin, 20);
 
 
   /* USER CODE END 2 */
@@ -117,22 +119,12 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  if(HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin) == GPIO_PIN_RESET)
-	  {
-		  HAL_Delay(30);
-		  if(HAL_GPIO_ReadPin(B1_GPIO_Port, B1_Pin) == GPIO_PIN_RESET)
-		  {
-			  RobotState(&RobotEnable);
-		  }
-	  }
+	  Button_Task(&BlueKey); //Check button state
+
 	  if(RobotEnable)
 	  {
 		  HCSR04p_ReadFloat(&HCSR04p_front, &Distance_f);
-		  //HAL_Delay(20);
-//		  Move_Left();
-//		  HAL_Delay(1000);
-//		  Move_Right();
-//		  HAL_Delay(1000);
+
 		  if(Distance_f > 10.5)
 		  {
 			  Move_Forward();
@@ -145,6 +137,10 @@ int main(void)
 		  {
 			  Stay();
 		  }
+	  }
+	  else
+	  {
+		  Stay();
 	  }
 
     /* USER CODE END WHILE */
@@ -209,6 +205,9 @@ static void MX_NVIC_Init(void)
   /* TIM1_CC_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(TIM1_CC_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(TIM1_CC_IRQn);
+  /* USART2_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(USART2_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(USART2_IRQn);
 }
 
 /* USER CODE BEGIN 4 */
