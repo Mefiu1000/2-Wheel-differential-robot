@@ -25,9 +25,11 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "HCSR04p.h"
-#include "Motors.h"
+#include "L298N.h"
 #include "Button.h"
+#include "RingBuffer.h"
 #include <stdbool.h>
+#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -57,16 +59,30 @@ float Distance_f;
 HCSR04p_t HCSR04p_front;
 
 bool RobotEnable = false;
-uint32_t Timer_Enable;
+bool* ptrRobotEnable = &RobotEnable;
+
 
 Button_t BlueKey;
+
+uint8_t Msg[30];
+uint8_t Length;
+
+uint8_t HC05_Command[RING_BUFFER_SIZE];
+HAL_StatusTypeDef Status_RX, Status_TX;
+
+bool Motor_Action_Flag = false;
+bool* ptrMotor_Action_Flag = &Motor_Action_Flag;
+Motor_t LeftMotor, RightMotor;
+
+RingBuffer_t RXBuffer;
+uint8_t RXTemp;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_NVIC_Init(void);
 /* USER CODE BEGIN PFP */
-void RobotState(bool *RobotEnable);
+void Hold_Distance(float* Distance);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -102,46 +118,50 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
-  MX_USART2_UART_Init();
   MX_TIM2_Init();
   MX_TIM1_Init();
+  MX_TIM3_Init();
+  MX_USART1_UART_Init();
 
   /* Initialize interrupts */
   MX_NVIC_Init();
   /* USER CODE BEGIN 2 */
   HCSR04p_Init(&HCSR04p_front, &HCSR04p_TRIGGER_TIMER, HCSR04p_TRIG_CHANNEL, &HCSR04p_ECHO_TIMER, HCSR04p_START_CHANNEL, HCSR04p_STOP_CHANNEL);
   Button_Init(&BlueKey, B1_GPIO_Port, B1_Pin, 20);
+  L298N_MotorInit(&LeftMotor, LeftMotor_FWD_GPIO_Port, LeftMotor_FWD_Pin, LeftMotor_BWD_GPIO_Port, LeftMotor_BWD_Pin);
+  L298N_MotorInit(&RightMotor, RightMotor_FWD_GPIO_Port, RightMotor_FWD_Pin, RightMotor_BWD_GPIO_Port, RightMotor_BWD_Pin);
 
 
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
+  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
+  //HAL_UART_Receive_IT(&huart1, HC05_Command, 1);
+  HAL_UART_Receive_IT(&huart1, &RXTemp, 1);
+
+  uint8_t i = 0;
+  for(i = 0; i < 9; i++)
+  {
+	  RB_Write(&RXBuffer, i);
+  }
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+
 	  Button_Task(&BlueKey); //Check button state
-
-	  if(RobotEnable)
-	  {
-		  HCSR04p_ReadFloat(&HCSR04p_front, &Distance_f);
-
-		  if(Distance_f > 10.5)
-		  {
-			  Move_Forward();
-		  }
-		  else if(Distance_f < 5.5)
-		  {
-			 Move_Backward();
-		  }
-		  else
-		  {
-			  Stay();
-		  }
-	  }
-	  else
-	  {
-		  Stay();
-	  }
+//	  if(RobotEnable)
+//	  {
+//		  HCSR04p_ReadFloat(&HCSR04p_front, &Distance_f);
+//		  L298N_MotorTask(&LeftMotor, &RightMotor);
+//  		  //Hold_Distance(&Distance_f);
+//
+//	  }
+//	  else
+//	  {
+//		  Stop(&LeftMotor, &RightMotor);
+//	  }
 
     /* USER CODE END WHILE */
 
@@ -205,9 +225,9 @@ static void MX_NVIC_Init(void)
   /* TIM1_CC_IRQn interrupt configuration */
   HAL_NVIC_SetPriority(TIM1_CC_IRQn, 0, 0);
   HAL_NVIC_EnableIRQ(TIM1_CC_IRQn);
-  /* USART2_IRQn interrupt configuration */
-  HAL_NVIC_SetPriority(USART2_IRQn, 0, 0);
-  HAL_NVIC_EnableIRQ(USART2_IRQn);
+  /* USART1_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(USART1_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(USART1_IRQn);
 }
 
 /* USER CODE BEGIN 4 */
@@ -222,14 +242,46 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 	}
 }
 
-void RobotState(bool *RobotEnable)
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-	*RobotEnable = !(*RobotEnable);
-	if(*RobotEnable == false)
+	if(huart->Instance == USART1)
 	{
-		Stay();
+		//Status_RX = HAL_UART_Receive_IT(&huart1, HC05_Command, 1);
+		RB_Write(&RXBuffer, RXTemp);
+		HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+		*ptrMotor_Action_Flag = true;
+		if(Status_RX != HAL_OK)
+		{
+			Length = sprintf((char*)Msg, "Error while receiving data\n\r");
+			Status_TX = HAL_UART_Transmit(&huart1, Msg, Length, 200);
+		}
+		else
+		{
+			RB_Write(&RXBuffer, RXTemp);
+
+			HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+			*ptrMotor_Action_Flag = true;
+		}
+		Status_RX = HAL_UART_Receive_IT(&huart1, &RXTemp, 1);
 	}
 }
+
+//Robot uses data collected by sensor to hold position at certain distance to object in front
+//void Hold_Distance(float* Distance)
+//{
+//	  if(*Distance > 10.5)
+//	  {
+//		  Move_Forward(&LeftMotor, &RightMotor);
+//	  }
+//	  else if(*Distance < 5.5)
+//	  {
+//		 Move_Backward(&LeftMotor, &RightMotor);
+//	  }
+//	  else
+//	  {
+//		  Stop(&LeftMotor, &RightMotor);
+//	  }
+//}
 
 /* USER CODE END 4 */
 

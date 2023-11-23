@@ -1,6 +1,7 @@
 "./Core/Src/Button.o"
 "./Core/Src/HCSR04p.o"
-"./Core/Src/Motors.o"
+"./Core/Src/L298N.o"
+"./Core/Src/RingBuffer.o"
 "./Core/Src/gpio.o"
 "./Core/Src/main.o"
 "./Core/Src/stm32f4xx_hal_msp.o"

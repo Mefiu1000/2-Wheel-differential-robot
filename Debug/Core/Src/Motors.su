@@ -1,5 +1,0 @@
-../Core/Src/Motors.c:8:6:Move_Forward	8	static
-../Core/Src/Motors.c:17:6:Move_Backward	8	static
-../Core/Src/Motors.c:26:6:Move_Left	8	static
-../Core/Src/Motors.c:35:6:Move_Right	8	static
-../Core/Src/Motors.c:44:6:Stay	8	static

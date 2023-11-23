@@ -10,6 +10,7 @@
 
 #include "main.h"
 #include <stdbool.h>
+
 typedef enum
 {
 	IDLE = 0,
@@ -26,7 +27,7 @@ typedef struct
 	uint32_t 		TimerDebounce; //debounce time
 	uint32_t		LastTick;
 
-	void(*ButtonPressed)(void);
+	//void(*ButtonPressed)(void);
 
 }Button_t;
 

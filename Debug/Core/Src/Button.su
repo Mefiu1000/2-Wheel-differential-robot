@@ -1,5 +1,5 @@
 ../Core/Src/Button.c:12:6:Button_Init	24	static
 ../Core/Src/Button.c:22:6:Button_IdleRoutine	16	static
 ../Core/Src/Button.c:32:6:Button_DebounceRoutine	16	static
-../Core/Src/Button.c:49:6:Button_PressedRoutine	16	static
-../Core/Src/Button.c:58:6:Button_Task	16	static
+../Core/Src/Button.c:52:6:Button_PressedRoutine	16	static
+../Core/Src/Button.c:61:6:Button_Task	16	static

@@ -6,7 +6,7 @@
  */
 #include "Button.h"
 
-extern bool RobotEnable;
+extern bool* ptrRobotEnable;
 //Init
 
 void Button_Init(Button_t* key, GPIO_TypeDef* Gpio_Port, uint16_t Gpio_Pin, uint32_t TimerDebounce)
@@ -33,15 +33,18 @@ void Button_DebounceRoutine(Button_t* key)
 {
 	if( (HAL_GetTick() - key->LastTick) > key->TimerDebounce)
 	{
-		key->State = IDLE;
 
 		if(HAL_GPIO_ReadPin(key->Gpio_Port, key->Gpio_Pin) == GPIO_PIN_RESET)
 		{
 			key->State = PRESSED;
-			if(key->ButtonPressed != NULL)
-			{
-				key->ButtonPressed();
-			}
+//			if(key->ButtonPressed != NULL)
+//			{
+//				key->ButtonPressed();
+//			}
+		}
+		else
+		{
+			key->State = IDLE;
 		}
 	}
 }
@@ -51,7 +54,7 @@ void Button_PressedRoutine(Button_t* key)
 	if(HAL_GPIO_ReadPin(key->Gpio_Port, key->Gpio_Pin) == GPIO_PIN_SET)
 	{
 		key->State = IDLE;
-		RobotEnable = !RobotEnable;
+		*ptrRobotEnable = !(*ptrRobotEnable);
 
 	}
 }
@@ -70,6 +73,3 @@ void Button_Task(Button_t* key)
 		break;
 	}
 }
-//Time setting
-
-//Callback
