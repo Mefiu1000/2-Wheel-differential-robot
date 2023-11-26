@@ -27,7 +27,7 @@ void L298N_MotorTask(Motor_t* Leftmotor, Motor_t* Rightmotor)
 		L298N_MotorOperationRoutine(Leftmotor, Rightmotor);
 		break;
 	case CHANGE_OPERATION:
-		L29N_MotorChangeOperationRoutine(Leftmotor, Rightmotor);
+		L298N_MotorChangeOperationRoutine(Leftmotor, Rightmotor);
 		break;
 	case MAINTAIN_DISTANCE:
 		L298N_MotorHoldDistanceRoutine(Leftmotor, Rightmotor);
@@ -39,77 +39,75 @@ void L298N_MotorOperationRoutine(Motor_t* Leftmotor, Motor_t* Rightmotor)
 {
 	if(*ptrMotor_Action_Flag == true)
 	{
+		Leftmotor->LastState = Leftmotor->State;
+		Rightmotor->LastState = Leftmotor->State;
+
 		Leftmotor->State = CHANGE_OPERATION;
 		Rightmotor->State = CHANGE_OPERATION;
 	}
 }
 
-void L29N_MotorChangeOperationRoutine(Motor_t* Leftmotor, Motor_t* Rightmotor)
+void L298N_MotorChangeOperationRoutine(Motor_t* Leftmotor, Motor_t* Rightmotor)
 {
-	uint16_t Speed;
+	uint8_t State = OPERATION;
 
+	//Parser_Parse();
 	switch(HC05_Command[0])
 	{
 	case MOVE_FORWARD:
-		//Motor_Startup(&left_speed, &right_speed);
 		Move_Forward(Leftmotor, Rightmotor);
-		//HAL_Delay(STARTUP_TIME);
-		//Motor_SetSpeed(left_speed, right_speed);
-		Leftmotor->State = OPERATION;
-		Rightmotor->State = OPERATION;
 		break;
 	case MOVE_BACKWARD:
-		//Motor_Startup(&left_speed, &right_speed);
 		Move_Backward(Leftmotor, Rightmotor);
-		Leftmotor->State = OPERATION;
-		Rightmotor->State = OPERATION;
 		break;
 	case MOVE_LEFT:
-		//Motor_Startup(&left_speed, &right_speed);
 		Move_Left(Leftmotor, Rightmotor);
-		Leftmotor->State = OPERATION;
-		Rightmotor->State = OPERATION;
 		break;
 	case MOVE_RIGHT:
-		//Motor_Startup(&left_speed, &right_speed);
 		Move_Right(Leftmotor, Rightmotor);
-		Leftmotor->State = OPERATION;
-		Rightmotor->State = OPERATION;
 		break;
 	case STOP:
-		Stop(Leftmotor, Rightmotor);
-		Leftmotor->State = OPERATION;
-		Rightmotor->State = OPERATION;
+		Move_Stop(Leftmotor, Rightmotor);
 		break;
 	case CHANGE_SPEED:
-		//uint16_t Speed;
+		uint16_t Speed;
 		Speed = Motor_CalculateSpeed(HC05_Command[1],HC05_Command[2], HC05_Command[3]);
 		Motor_SetSpeed(Speed, Speed);
-		Leftmotor->State = OPERATION;
-		Rightmotor->State = OPERATION;
+		State = Leftmotor->LastState;
+		break;
 	case HOLD_DISTANCE:
-		Leftmotor->State = MAINTAIN_DISTANCE;
-		Rightmotor->State = MAINTAIN_DISTANCE;
+		State = MAINTAIN_DISTANCE;
+		break;
 	default:
 		Wrong_Data();
-		Leftmotor->State = OPERATION;
-		Rightmotor->State = OPERATION;
+		RB_Flush(&RX_Buffer);
 		break;
 	}
 
+	Leftmotor->State = State;
+	Rightmotor->State = State;
 	*ptrMotor_Action_Flag = false;
 }
 
 uint16_t Motor_CalculateSpeed(uint8_t num_100,uint8_t num_10, uint8_t num_1)
 {
+
 	uint16_t Speed;
-	Speed = num_1 + num_10 * 10 + num_100 * 100;
+	Speed = (num_1 - '0') + (num_10- '0') * 10 + (num_100- '0') * 100;
 
 	return Speed;
 }
 
 void L298N_MotorHoldDistanceRoutine(Motor_t* Leftmotor, Motor_t* Rightmotor)
 {
+	if(*ptrMotor_Action_Flag == true)
+	{
+		Leftmotor->LastState = Leftmotor->State;
+		Rightmotor->LastState = Leftmotor->State;
+
+		Leftmotor->State = CHANGE_OPERATION;
+		Rightmotor->State = CHANGE_OPERATION;
+	}
 	//Hold_Distance(&Distance_f);
 	  if(Distance_f > 10.5)
 	  {
@@ -121,7 +119,7 @@ void L298N_MotorHoldDistanceRoutine(Motor_t* Leftmotor, Motor_t* Rightmotor)
 	  }
 	  else
 	  {
-		  Stop(Leftmotor, Rightmotor);
+		  Move_Stop(Leftmotor, Rightmotor);
 	  }
 }
 
@@ -210,7 +208,7 @@ void Move_Right(Motor_t* Leftmotor, Motor_t* Rightmotor)
 	Motor_SetSpeed(left_speed, right_speed);
 }
 
-void Stop(Motor_t* Leftmotor, Motor_t* Rightmotor)
+void Move_Stop(Motor_t* Leftmotor, Motor_t* Rightmotor)
 {
 	HAL_GPIO_WritePin(Leftmotor->MotorForward_Port, Leftmotor->MotorForward_Pin, GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(Leftmotor->MotorBackward_Port, Leftmotor->MotorBackward_Pin, GPIO_PIN_RESET);

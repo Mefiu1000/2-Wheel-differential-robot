@@ -10,7 +10,7 @@
 
 #include "main.h"
 
-#define RING_BUFFER_SIZE 8
+#define RING_BUFFER_SIZE 16
 
 typedef enum
 {

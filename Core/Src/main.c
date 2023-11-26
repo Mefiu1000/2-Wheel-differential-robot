@@ -28,8 +28,11 @@
 #include "L298N.h"
 #include "Button.h"
 #include "RingBuffer.h"
+#include "simple_parser.h"
+
 #include <stdbool.h>
 #include <stdio.h>
+#include <string.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -44,6 +47,7 @@
 #define HCSR04p_TRIG_CHANNEL TIM_CHANNEL_3
 #define HCSR04p_START_CHANNEL TIM_CHANNEL_1
 #define HCSR04p_STOP_CHANNEL TIM_CHANNEL_2
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -74,8 +78,10 @@ bool Motor_Action_Flag = false;
 bool* ptrMotor_Action_Flag = &Motor_Action_Flag;
 Motor_t LeftMotor, RightMotor;
 
-RingBuffer_t RXBuffer;
-uint8_t RXTemp;
+RingBuffer_t RX_Buffer;
+uint8_t RX_Temp;
+uint8_t RX_Lines;
+//uint8_t Recevied_Data[32];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -83,6 +89,7 @@ void SystemClock_Config(void);
 static void MX_NVIC_Init(void);
 /* USER CODE BEGIN PFP */
 void Hold_Distance(float* Distance);
+void Robot_Operation();
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -127,41 +134,34 @@ int main(void)
   MX_NVIC_Init();
   /* USER CODE BEGIN 2 */
   HCSR04p_Init(&HCSR04p_front, &HCSR04p_TRIGGER_TIMER, HCSR04p_TRIG_CHANNEL, &HCSR04p_ECHO_TIMER, HCSR04p_START_CHANNEL, HCSR04p_STOP_CHANNEL);
+
   Button_Init(&BlueKey, B1_GPIO_Port, B1_Pin, 20);
+
   L298N_MotorInit(&LeftMotor, LeftMotor_FWD_GPIO_Port, LeftMotor_FWD_Pin, LeftMotor_BWD_GPIO_Port, LeftMotor_BWD_Pin);
   L298N_MotorInit(&RightMotor, RightMotor_FWD_GPIO_Port, RightMotor_FWD_Pin, RightMotor_BWD_GPIO_Port, RightMotor_BWD_Pin);
 
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1); //Left motor speed
+  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2); //Right motor speed
 
-  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1);
-  HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2);
-  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET);
-  //HAL_UART_Receive_IT(&huart1, HC05_Command, 1);
-  HAL_UART_Receive_IT(&huart1, &RXTemp, 1);
+  Status_RX = HAL_UART_Receive_IT(&huart1, &RX_Temp, 1);
 
-  uint8_t i = 0;
-  for(i = 0; i < 9; i++)
-  {
-	  RB_Write(&RXBuffer, i);
-  }
+  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET); //Turn LED to inform that initialisation ended
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-
 	  Button_Task(&BlueKey); //Check button state
-//	  if(RobotEnable)
-//	  {
-//		  HCSR04p_ReadFloat(&HCSR04p_front, &Distance_f);
-//		  L298N_MotorTask(&LeftMotor, &RightMotor);
-//  		  //Hold_Distance(&Distance_f);
-//
-//	  }
-//	  else
-//	  {
-//		  Stop(&LeftMotor, &RightMotor);
-//	  }
+
+	  if(RobotEnable)
+	  {
+		  Robot_Operation();
+	  }
+	  else
+	  {
+		  Move_Stop(&LeftMotor, &RightMotor);
+	  }
 
     /* USER CODE END WHILE */
 
@@ -246,10 +246,6 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 	if(huart->Instance == USART1)
 	{
-		//Status_RX = HAL_UART_Receive_IT(&huart1, HC05_Command, 1);
-		RB_Write(&RXBuffer, RXTemp);
-		HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-		*ptrMotor_Action_Flag = true;
 		if(Status_RX != HAL_OK)
 		{
 			Length = sprintf((char*)Msg, "Error while receiving data\n\r");
@@ -257,31 +253,47 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 		}
 		else
 		{
-			RB_Write(&RXBuffer, RXTemp);
+			if(RobotEnable)
+			{
+				if(RB_OK == RB_Write(&RX_Buffer, RX_Temp))
+				{
+					HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
+					//*ptrMotor_Action_Flag = true;
 
-			HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-			*ptrMotor_Action_Flag = true;
+					if(RX_Temp == END_LINE)
+					{
+						RX_Lines++;
+						//*ptrMotor_Action_Flag = true;
+					}
+					if(RX_Lines > 0)
+					{
+					  Parser_TakeLine(&RX_Buffer, HC05_Command);
+					  RX_Lines--;
+					  *ptrMotor_Action_Flag = true;
+					}
+				}
+			}
+
 		}
-		Status_RX = HAL_UART_Receive_IT(&huart1, &RXTemp, 1);
+
+		Status_RX = HAL_UART_Receive_IT(&huart1, &RX_Temp, 1);
 	}
 }
 
-//Robot uses data collected by sensor to hold position at certain distance to object in front
-//void Hold_Distance(float* Distance)
-//{
-//	  if(*Distance > 10.5)
-//	  {
-//		  Move_Forward(&LeftMotor, &RightMotor);
-//	  }
-//	  else if(*Distance < 5.5)
-//	  {
-//		 Move_Backward(&LeftMotor, &RightMotor);
-//	  }
-//	  else
-//	  {
-//		  Stop(&LeftMotor, &RightMotor);
-//	  }
-//}
+void Robot_Operation()
+{
+//	if(RX_Lines > 0)
+//	{
+//	  Parser_TakeLine(&RX_Buffer, HC05_Command);
+//	  RX_Lines--;
+//	}
+
+	HCSR04p_ReadFloat(&HCSR04p_front, &Distance_f);
+	L298N_MotorTask(&LeftMotor, &RightMotor);
+	//Hold_Distance(&Distance_f);
+}
+
+
 
 /* USER CODE END 4 */
 

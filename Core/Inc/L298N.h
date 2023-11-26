@@ -12,11 +12,13 @@
 #include "usart.h"
 #include <stdbool.h>
 #include <stdio.h>
+#include "stdlib.h"
 #include "HCSR04p.h"
+#include "RingBuffer.h"
 
 //Set accordingly to project
 #define FULL_SPEED 				999 //PWM max value, change accordingly to PWM timer
-#define STARTUP_TIME 			3 // time needed to overcome static friction for (cheap)motors used in project
+#define STARTUP_TIME 			5 // time needed to overcome static friction for (cheap)motors used in project
 #define TIM_LEFTMOTOR 			TIM3
 #define TIM_LEFTMOTOR_CHANNEL 	CCR1
 #define TIM_RIGHTMOTOR 			TIM3
@@ -33,8 +35,11 @@
 
 
 extern bool *ptrMotor_Action_Flag;
-extern uint8_t HC05_Command[8];
+extern uint8_t HC05_Command[16];
+extern RingBuffer_t RX_Buffer;
 extern float Distance_f;
+
+
 typedef enum
 {
 	OPERATION = 0,
@@ -45,6 +50,7 @@ typedef enum
 typedef struct
 {
 	MOTOR_STATE 	State;
+	MOTOR_STATE		LastState;
 
 	GPIO_TypeDef*	MotorForward_Port;
 	uint16_t 		MotorForward_Pin;
@@ -58,14 +64,14 @@ void L298N_MotorInit(Motor_t* motor, GPIO_TypeDef* MotorLeftForward_Port, uint16
 		GPIO_TypeDef* MotorLeftBackward_Port, uint16_t MotorLeftBackward_Pin);
 void L298N_MotorTask(Motor_t* Leftmotor, Motor_t* Rightmotor);
 void L298N_MotorOperationRoutine(Motor_t* Leftmotor, Motor_t* Rightmotor);
-void L29N_MotorChangeOperationRoutine(Motor_t* Leftmotor, Motor_t* Rightmotor);
+void L298N_MotorChangeOperationRoutine(Motor_t* Leftmotor, Motor_t* Rightmotor);
 void L298N_MotorHoldDistanceRoutine(Motor_t* Leftmotor, Motor_t* Rightmotor);
 void Wrong_Data();
 void Move_Forward(Motor_t* Leftmotor, Motor_t* Rightmotor);
 void Move_Backward(Motor_t* Leftmotor, Motor_t* Rightmotor);
 void Move_Left(Motor_t* Leftmotor, Motor_t* Rightmotor);
 void Move_Right(Motor_t* Leftmotor, Motor_t* Rightmotor);
-void Stop(Motor_t* Leftmotor, Motor_t* Rightmotor);
+void Move_Stop(Motor_t* Leftmotor, Motor_t* Rightmotor);
 void Motor_SetSpeed(uint16_t left_speed, uint16_t right_speed);
 void Motor_Startup(uint16_t* left_speed, uint16_t* right_speed);
 uint16_t Motor_CalculateSpeed(uint8_t num_100,uint8_t num_10, uint8_t num_1);

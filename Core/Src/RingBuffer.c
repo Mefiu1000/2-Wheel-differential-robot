@@ -10,7 +10,7 @@
 
 RB_Status RB_Write(RingBuffer_t* Buff, uint8_t Value)
 {
-	uint8_t HeadTmp = (Buff->Head + 1) % (RING_BUFFER_SIZE + 1); //modulo to avoid accessing element outside of table
+	uint8_t HeadTmp = (Buff->Head + 1) % (RING_BUFFER_SIZE); //modulo to avoid accessing element outside of table
 
 	if(HeadTmp == Buff->Tail)
 	{
