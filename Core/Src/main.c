@@ -28,8 +28,8 @@
 #include "L298N.h"
 #include "Button.h"
 #include "RingBuffer.h"
-#include "simple_parser.h"
-
+#include "complex_parser.h"
+#include "utils.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
@@ -61,7 +61,8 @@
 uint16_t Distance_u16;
 float Distance_f;
 HCSR04p_t HCSR04p_front;
-
+float HoldDistance_value = 0.0;
+float* ptrHoldDistance_value = &HoldDistance_value;
 bool RobotEnable = false;
 bool* ptrRobotEnable = &RobotEnable;
 
@@ -81,7 +82,7 @@ Motor_t LeftMotor, RightMotor;
 RingBuffer_t RX_Buffer;
 uint8_t RX_Temp;
 uint8_t RX_Lines;
-//uint8_t Recevied_Data[32];
+uint8_t Recevied_Data[RING_BUFFER_SIZE];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -145,15 +146,22 @@ int main(void)
 
   Status_RX = HAL_UART_Receive_IT(&huart1, &RX_Temp, 1);
 
-  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET); //Turn LED to inform that initialisation ended
+  //HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET); //Turn LED to inform that initialization ended
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+
 	  Button_Task(&BlueKey); //Check button state
 
+	  if(RX_Lines > 0)
+	  {
+		  Parser_TakeLine(&RX_Buffer, Recevied_Data);
+		  RX_Lines--;
+		  Parser_Parse(Recevied_Data);
+	  }
 	  if(RobotEnable)
 	  {
 		  Robot_Operation();
@@ -248,13 +256,12 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 	{
 		if(Status_RX != HAL_OK)
 		{
-			Length = sprintf((char*)Msg, "Error while receiving data\n\r");
-			Status_TX = HAL_UART_Transmit(&huart1, Msg, Length, 200);
+			UartLog("Error while receiving data\n\r");
 		}
 		else
 		{
-			if(RobotEnable)
-			{
+			//if(RobotEnable)
+			//{
 				if(RB_OK == RB_Write(&RX_Buffer, RX_Temp))
 				{
 					HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
@@ -265,14 +272,14 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 						RX_Lines++;
 						//*ptrMotor_Action_Flag = true;
 					}
-					if(RX_Lines > 0)
-					{
-					  Parser_TakeLine(&RX_Buffer, HC05_Command);
-					  RX_Lines--;
-					  *ptrMotor_Action_Flag = true;
-					}
+//					if(RX_Lines > 0)
+//					{
+//					  Parser_TakeLine(&RX_Buffer, HC05_Command);
+//					  RX_Lines--;
+//					  *ptrMotor_Action_Flag = true;
+//					}
 				}
-			}
+			//}
 
 		}
 
@@ -284,10 +291,10 @@ void Robot_Operation()
 {
 //	if(RX_Lines > 0)
 //	{
-//	  Parser_TakeLine(&RX_Buffer, HC05_Command);
+//	  Parser_TakeLine(&RX_Buffer, Recevied_Data);
 //	  RX_Lines--;
+//	  Parser_Parse(Recevied_Data);
 //	}
-
 	HCSR04p_ReadFloat(&HCSR04p_front, &Distance_f);
 	L298N_MotorTask(&LeftMotor, &RightMotor);
 	//Hold_Distance(&Distance_f);

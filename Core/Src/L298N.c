@@ -51,7 +51,6 @@ void L298N_MotorChangeOperationRoutine(Motor_t* Leftmotor, Motor_t* Rightmotor)
 {
 	uint8_t State = OPERATION;
 
-	//Parser_Parse();
 	switch(HC05_Command[0])
 	{
 	case MOVE_FORWARD:
@@ -79,7 +78,7 @@ void L298N_MotorChangeOperationRoutine(Motor_t* Leftmotor, Motor_t* Rightmotor)
 		State = MAINTAIN_DISTANCE;
 		break;
 	default:
-		Wrong_Data();
+		//Wrong_Data();
 		RB_Flush(&RX_Buffer);
 		break;
 	}
@@ -109,11 +108,11 @@ void L298N_MotorHoldDistanceRoutine(Motor_t* Leftmotor, Motor_t* Rightmotor)
 		Rightmotor->State = CHANGE_OPERATION;
 	}
 	//Hold_Distance(&Distance_f);
-	  if(Distance_f > 10.5)
+	  if(Distance_f > (*ptrHoldDistance_value + 1.0))
 	  {
 		  Move_Forward(Leftmotor, Rightmotor);
 	  }
-	  else if(Distance_f < 5.5)
+	  else if(Distance_f < (*ptrHoldDistance_value - 3.0))
 	  {
 		 Move_Backward(Leftmotor, Rightmotor);
 	  }
@@ -123,13 +122,13 @@ void L298N_MotorHoldDistanceRoutine(Motor_t* Leftmotor, Motor_t* Rightmotor)
 	  }
 }
 
-void Wrong_Data()
-{
-	uint8_t msg[28], Length;
-
-	Length = sprintf((char*)msg, "Wrong command, try again\n\r");
-	HAL_UART_Transmit(&huart1, msg, Length, 2000);
-}
+//void Wrong_Data()
+//{
+//	uint8_t msg[28], Length;
+//
+//	Length = sprintf((char*)msg, "Wrong command, try again\n\r");
+//	HAL_UART_Transmit(&huart1, msg, Length, 2000);
+//}
 
 void Move_Forward(Motor_t* Leftmotor, Motor_t* Rightmotor)
 {

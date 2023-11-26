@@ -55,6 +55,7 @@ void Button_PressedRoutine(Button_t* key)
 	{
 		key->State = IDLE;
 		*ptrRobotEnable = !(*ptrRobotEnable);
+		HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
 
 	}
 }

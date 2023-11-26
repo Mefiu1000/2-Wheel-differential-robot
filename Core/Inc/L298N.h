@@ -32,13 +32,14 @@
 #define STOP 			0x53 //S
 #define CHANGE_SPEED 	0x56 //V
 #define HOLD_DISTANCE 	0x48 //H
+#define WRONG_DATA 		0x00
 
 
 extern bool *ptrMotor_Action_Flag;
-extern uint8_t HC05_Command[16];
+extern uint8_t HC05_Command[RING_BUFFER_SIZE];
 extern RingBuffer_t RX_Buffer;
 extern float Distance_f;
-
+extern float* ptrHoldDistance_value;
 
 typedef enum
 {
@@ -66,7 +67,7 @@ void L298N_MotorTask(Motor_t* Leftmotor, Motor_t* Rightmotor);
 void L298N_MotorOperationRoutine(Motor_t* Leftmotor, Motor_t* Rightmotor);
 void L298N_MotorChangeOperationRoutine(Motor_t* Leftmotor, Motor_t* Rightmotor);
 void L298N_MotorHoldDistanceRoutine(Motor_t* Leftmotor, Motor_t* Rightmotor);
-void Wrong_Data();
+//void Wrong_Data();
 void Move_Forward(Motor_t* Leftmotor, Motor_t* Rightmotor);
 void Move_Backward(Motor_t* Leftmotor, Motor_t* Rightmotor);
 void Move_Left(Motor_t* Leftmotor, Motor_t* Rightmotor);

@@ -1,2 +1,0 @@
-../Core/Src/simple_parser.c:11:6:Parser_TakeLine	24	static
-../Core/Src/simple_parser.c:34:9:Parser_Parse	24	static
