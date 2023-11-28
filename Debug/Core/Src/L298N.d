@@ -27,7 +27,8 @@ Core/Src/L298N.o: ../Core/Src/L298N.c ../Core/Inc/L298N.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_tim_ex.h \
  ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal_uart.h \
- ../Core/Inc/usart.h ../Core/Inc/HCSR04p.h ../Core/Inc/RingBuffer.h
+ ../Core/Inc/usart.h ../Core/Inc/HCSR04p.h ../Core/Inc/RingBuffer.h \
+ ../Core/Inc/utils.h
 ../Core/Inc/L298N.h:
 ../Core/Inc/main.h:
 ../Drivers/STM32F4xx_HAL_Driver/Inc/stm32f4xx_hal.h:
@@ -61,3 +62,4 @@ Core/Src/L298N.o: ../Core/Src/L298N.c ../Core/Inc/L298N.h \
 ../Core/Inc/usart.h:
 ../Core/Inc/HCSR04p.h:
 ../Core/Inc/RingBuffer.h:
+../Core/Inc/utils.h:

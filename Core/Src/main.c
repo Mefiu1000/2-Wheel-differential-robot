@@ -63,6 +63,10 @@ float Distance_f;
 HCSR04p_t HCSR04p_front;
 float HoldDistance_value = 0.0;
 float* ptrHoldDistance_value = &HoldDistance_value;
+
+bool ReadDist = false;
+bool* ptrReadDist = &ReadDist;
+
 bool RobotEnable = false;
 bool* ptrRobotEnable = &RobotEnable;
 
@@ -83,6 +87,8 @@ RingBuffer_t RX_Buffer;
 uint8_t RX_Temp;
 uint8_t RX_Lines;
 uint8_t Recevied_Data[RING_BUFFER_SIZE];
+
+PID_t Distance_PID;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -105,6 +111,7 @@ void Robot_Operation();
 int main(void)
 {
   /* USER CODE BEGIN 1 */
+
 
   /* USER CODE END 1 */
 
@@ -140,13 +147,13 @@ int main(void)
 
   L298N_MotorInit(&LeftMotor, LeftMotor_FWD_GPIO_Port, LeftMotor_FWD_Pin, LeftMotor_BWD_GPIO_Port, LeftMotor_BWD_Pin);
   L298N_MotorInit(&RightMotor, RightMotor_FWD_GPIO_Port, RightMotor_FWD_Pin, RightMotor_BWD_GPIO_Port, RightMotor_BWD_Pin);
+  PID_Init(&Distance_PID, 100.0, 1.0, 10.0);
 
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1); //Left motor speed
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2); //Right motor speed
 
   Status_RX = HAL_UART_Receive_IT(&huart1, &RX_Temp, 1);
 
-  //HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_SET); //Turn LED to inform that initialization ended
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -260,26 +267,16 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 		}
 		else
 		{
-			//if(RobotEnable)
-			//{
-				if(RB_OK == RB_Write(&RX_Buffer, RX_Temp))
-				{
-					HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-					//*ptrMotor_Action_Flag = true;
+			if(RB_OK == RB_Write(&RX_Buffer, RX_Temp))
+			{
+				HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
 
-					if(RX_Temp == END_LINE)
-					{
-						RX_Lines++;
-						//*ptrMotor_Action_Flag = true;
-					}
-//					if(RX_Lines > 0)
-//					{
-//					  Parser_TakeLine(&RX_Buffer, HC05_Command);
-//					  RX_Lines--;
-//					  *ptrMotor_Action_Flag = true;
-//					}
+				if(RX_Temp == END_LINE)
+				{
+					RX_Lines++;
 				}
-			//}
+
+			}
 
 		}
 
@@ -289,15 +286,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 
 void Robot_Operation()
 {
-//	if(RX_Lines > 0)
-//	{
-//	  Parser_TakeLine(&RX_Buffer, Recevied_Data);
-//	  RX_Lines--;
-//	  Parser_Parse(Recevied_Data);
-//	}
 	HCSR04p_ReadFloat(&HCSR04p_front, &Distance_f);
-	L298N_MotorTask(&LeftMotor, &RightMotor);
-	//Hold_Distance(&Distance_f);
+	L298N_MotorTask(&LeftMotor, &RightMotor, &Distance_PID);
 }
 
 

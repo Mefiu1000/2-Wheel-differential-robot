@@ -41,6 +41,7 @@ void HCSR04p_ReadFloat(HCSR04p_t *hcsr04p, float *Read_distance)
 void HCSR04p_InteruptHandler(HCSR04p_t *hcsr04p)
 {
 	hcsr04p->Result_us = (uint16_t)hcsr04p->htim_echo->Instance->CCR2 - (uint16_t)hcsr04p->htim_echo->Instance->CCR1; //pulse width
+	*ptrReadDist = true;
 	//HAL_TIM_IC_Start_IT(htim, HCSR04p_STOP_CHANNEL);
 }
 

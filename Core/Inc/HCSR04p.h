@@ -9,6 +9,7 @@
 #define INC_HCSR04P_H_
 
 #include "main.h"
+#include <stdbool.h>
 
 typedef struct
 {
@@ -23,6 +24,8 @@ typedef struct
 	uint16_t Result_us;
 
 }HCSR04p_t;
+
+extern bool* ptrReadDist;
 
 void HCSR04p_Init(HCSR04p_t *hcsr04p,  TIM_HandleTypeDef *timer_trigger, uint32_t Trigger_TimChannel, TIM_HandleTypeDef *timer_echo,
 		uint32_t Echo_TimChannel_Start, uint32_t Echo_TimChannel_Stop);

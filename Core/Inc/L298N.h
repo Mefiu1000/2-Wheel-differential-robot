@@ -13,8 +13,10 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include "stdlib.h"
+#include "math.h"
 #include "HCSR04p.h"
 #include "RingBuffer.h"
+#include "utils.h"
 
 //Set accordingly to project
 #define FULL_SPEED 				999 //PWM max value, change accordingly to PWM timer
@@ -60,14 +62,27 @@ typedef struct
 	uint16_t 		MotorBackward_Pin;
 }Motor_t;
 
+typedef struct
+{
+	int8_t previous_direction;//for L298N driver to change motor rev direction
+
+	float previous_error;
+	float error_integral;
+	float error_derivative;
+
+	float P;
+	float I;
+	float D;
+
+}PID_t;
+
 
 void L298N_MotorInit(Motor_t* motor, GPIO_TypeDef* MotorLeftForward_Port, uint16_t MotorLeftForward_Pin,
 		GPIO_TypeDef* MotorLeftBackward_Port, uint16_t MotorLeftBackward_Pin);
-void L298N_MotorTask(Motor_t* Leftmotor, Motor_t* Rightmotor);
+void L298N_MotorTask(Motor_t* Leftmotor, Motor_t* Rightmotor, PID_t* PID);
 void L298N_MotorOperationRoutine(Motor_t* Leftmotor, Motor_t* Rightmotor);
 void L298N_MotorChangeOperationRoutine(Motor_t* Leftmotor, Motor_t* Rightmotor);
-void L298N_MotorHoldDistanceRoutine(Motor_t* Leftmotor, Motor_t* Rightmotor);
-//void Wrong_Data();
+void L298N_MotorHoldDistanceRoutine(Motor_t* Leftmotor, Motor_t* Rightmotor, PID_t* PID);
 void Move_Forward(Motor_t* Leftmotor, Motor_t* Rightmotor);
 void Move_Backward(Motor_t* Leftmotor, Motor_t* Rightmotor);
 void Move_Left(Motor_t* Leftmotor, Motor_t* Rightmotor);
@@ -76,5 +91,7 @@ void Move_Stop(Motor_t* Leftmotor, Motor_t* Rightmotor);
 void Motor_SetSpeed(uint16_t left_speed, uint16_t right_speed);
 void Motor_Startup(uint16_t* left_speed, uint16_t* right_speed);
 uint16_t Motor_CalculateSpeed(uint8_t num_100,uint8_t num_10, uint8_t num_1);
+void PID_Init(PID_t* PID, float P, float I, float D);
+
 
 #endif /* INC_MOTORS_H_ */
