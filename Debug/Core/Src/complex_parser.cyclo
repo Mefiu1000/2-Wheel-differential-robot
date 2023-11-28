@@ -1,6 +1,0 @@
-../Core/Src/complex_parser.c:11:6:Parser_TakeLine	3
-../Core/Src/complex_parser.c:74:13:Parser_ParseMOVE	7
-../Core/Src/complex_parser.c:117:13:Parser_ParseSPEED	5
-../Core/Src/complex_parser.c:165:13:Parser_ParseHOLD	6
-../Core/Src/complex_parser.c:196:13:Parser_ParseENABLE	6
-../Core/Src/complex_parser.c:229:6:Parser_Parse	5

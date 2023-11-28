@@ -1,0 +1,6 @@
+../Core/Src/my_lib/complex_parser.c:10:6:Parser_TakeLine	24	static
+../Core/Src/my_lib/complex_parser.c:32:13:Parser_ParseMOVE	24	static
+../Core/Src/my_lib/complex_parser.c:75:13:Parser_ParseSPEED	32	static
+../Core/Src/my_lib/complex_parser.c:123:13:Parser_ParseHOLD	40	static
+../Core/Src/my_lib/complex_parser.c:154:13:Parser_ParseENABLE	24	static
+../Core/Src/my_lib/complex_parser.c:187:6:Parser_Parse	24	static

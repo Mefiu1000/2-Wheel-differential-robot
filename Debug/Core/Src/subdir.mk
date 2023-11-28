@@ -5,11 +5,6 @@
 
 # Add inputs and outputs from these tool invocations to the build variables 
 C_SRCS += \
-../Core/Src/Button.c \
-../Core/Src/HCSR04p.c \
-../Core/Src/L298N.c \
-../Core/Src/RingBuffer.c \
-../Core/Src/complex_parser.c \
 ../Core/Src/gpio.c \
 ../Core/Src/main.c \
 ../Core/Src/stm32f4xx_hal_msp.c \
@@ -18,15 +13,9 @@ C_SRCS += \
 ../Core/Src/sysmem.c \
 ../Core/Src/system_stm32f4xx.c \
 ../Core/Src/tim.c \
-../Core/Src/usart.c \
-../Core/Src/utils.c 
+../Core/Src/usart.c 
 
 OBJS += \
-./Core/Src/Button.o \
-./Core/Src/HCSR04p.o \
-./Core/Src/L298N.o \
-./Core/Src/RingBuffer.o \
-./Core/Src/complex_parser.o \
 ./Core/Src/gpio.o \
 ./Core/Src/main.o \
 ./Core/Src/stm32f4xx_hal_msp.o \
@@ -35,15 +24,9 @@ OBJS += \
 ./Core/Src/sysmem.o \
 ./Core/Src/system_stm32f4xx.o \
 ./Core/Src/tim.o \
-./Core/Src/usart.o \
-./Core/Src/utils.o 
+./Core/Src/usart.o 
 
 C_DEPS += \
-./Core/Src/Button.d \
-./Core/Src/HCSR04p.d \
-./Core/Src/L298N.d \
-./Core/Src/RingBuffer.d \
-./Core/Src/complex_parser.d \
 ./Core/Src/gpio.d \
 ./Core/Src/main.d \
 ./Core/Src/stm32f4xx_hal_msp.d \
@@ -52,8 +35,7 @@ C_DEPS += \
 ./Core/Src/sysmem.d \
 ./Core/Src/system_stm32f4xx.d \
 ./Core/Src/tim.d \
-./Core/Src/usart.d \
-./Core/Src/utils.d 
+./Core/Src/usart.d 
 
 
 # Each subdirectory must supply rules for building sources it contributes
@@ -63,7 +45,7 @@ Core/Src/%.o Core/Src/%.su Core/Src/%.cyclo: ../Core/Src/%.c Core/Src/subdir.mk
 clean: clean-Core-2f-Src
 
 clean-Core-2f-Src:
-	-$(RM) ./Core/Src/Button.cyclo ./Core/Src/Button.d ./Core/Src/Button.o ./Core/Src/Button.su ./Core/Src/HCSR04p.cyclo ./Core/Src/HCSR04p.d ./Core/Src/HCSR04p.o ./Core/Src/HCSR04p.su ./Core/Src/L298N.cyclo ./Core/Src/L298N.d ./Core/Src/L298N.o ./Core/Src/L298N.su ./Core/Src/RingBuffer.cyclo ./Core/Src/RingBuffer.d ./Core/Src/RingBuffer.o ./Core/Src/RingBuffer.su ./Core/Src/complex_parser.cyclo ./Core/Src/complex_parser.d ./Core/Src/complex_parser.o ./Core/Src/complex_parser.su ./Core/Src/gpio.cyclo ./Core/Src/gpio.d ./Core/Src/gpio.o ./Core/Src/gpio.su ./Core/Src/main.cyclo ./Core/Src/main.d ./Core/Src/main.o ./Core/Src/main.su ./Core/Src/stm32f4xx_hal_msp.cyclo ./Core/Src/stm32f4xx_hal_msp.d ./Core/Src/stm32f4xx_hal_msp.o ./Core/Src/stm32f4xx_hal_msp.su ./Core/Src/stm32f4xx_it.cyclo ./Core/Src/stm32f4xx_it.d ./Core/Src/stm32f4xx_it.o ./Core/Src/stm32f4xx_it.su ./Core/Src/syscalls.cyclo ./Core/Src/syscalls.d ./Core/Src/syscalls.o ./Core/Src/syscalls.su ./Core/Src/sysmem.cyclo ./Core/Src/sysmem.d ./Core/Src/sysmem.o ./Core/Src/sysmem.su ./Core/Src/system_stm32f4xx.cyclo ./Core/Src/system_stm32f4xx.d ./Core/Src/system_stm32f4xx.o ./Core/Src/system_stm32f4xx.su ./Core/Src/tim.cyclo ./Core/Src/tim.d ./Core/Src/tim.o ./Core/Src/tim.su ./Core/Src/usart.cyclo ./Core/Src/usart.d ./Core/Src/usart.o ./Core/Src/usart.su ./Core/Src/utils.cyclo ./Core/Src/utils.d ./Core/Src/utils.o ./Core/Src/utils.su
+	-$(RM) ./Core/Src/gpio.cyclo ./Core/Src/gpio.d ./Core/Src/gpio.o ./Core/Src/gpio.su ./Core/Src/main.cyclo ./Core/Src/main.d ./Core/Src/main.o ./Core/Src/main.su ./Core/Src/stm32f4xx_hal_msp.cyclo ./Core/Src/stm32f4xx_hal_msp.d ./Core/Src/stm32f4xx_hal_msp.o ./Core/Src/stm32f4xx_hal_msp.su ./Core/Src/stm32f4xx_it.cyclo ./Core/Src/stm32f4xx_it.d ./Core/Src/stm32f4xx_it.o ./Core/Src/stm32f4xx_it.su ./Core/Src/syscalls.cyclo ./Core/Src/syscalls.d ./Core/Src/syscalls.o ./Core/Src/syscalls.su ./Core/Src/sysmem.cyclo ./Core/Src/sysmem.d ./Core/Src/sysmem.o ./Core/Src/sysmem.su ./Core/Src/system_stm32f4xx.cyclo ./Core/Src/system_stm32f4xx.d ./Core/Src/system_stm32f4xx.o ./Core/Src/system_stm32f4xx.su ./Core/Src/tim.cyclo ./Core/Src/tim.d ./Core/Src/tim.o ./Core/Src/tim.su ./Core/Src/usart.cyclo ./Core/Src/usart.d ./Core/Src/usart.o ./Core/Src/usart.su
 
 .PHONY: clean-Core-2f-Src
 

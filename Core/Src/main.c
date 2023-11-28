@@ -24,15 +24,17 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "HCSR04p.h"
-#include "L298N.h"
-#include "Button.h"
-#include "RingBuffer.h"
-#include "complex_parser.h"
-#include "utils.h"
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
+
+#include "my_lib/Button.h"
+#include "my_lib/HCSR04p.h"
+#include "my_lib/L298N.h"
+#include "my_lib/RingBuffer.h"
+#include "my_lib/utils.h"
+#include "my_lib/complex_parser.h"
+#include "my_lib/Robot.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -58,29 +60,13 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-uint16_t Distance_u16;
-float Distance_f;
+
 HCSR04p_t HCSR04p_front;
-float HoldDistance_value = 0.0;
-float* ptrHoldDistance_value = &HoldDistance_value;
-
-bool ReadDist = false;
-bool* ptrReadDist = &ReadDist;
-
-bool RobotEnable = false;
-bool* ptrRobotEnable = &RobotEnable;
-
 
 Button_t BlueKey;
 
-uint8_t Msg[30];
-uint8_t Length;
+HAL_StatusTypeDef Status_RX;
 
-uint8_t HC05_Command[RING_BUFFER_SIZE];
-HAL_StatusTypeDef Status_RX, Status_TX;
-
-bool Motor_Action_Flag = false;
-bool* ptrMotor_Action_Flag = &Motor_Action_Flag;
 Motor_t LeftMotor, RightMotor;
 
 RingBuffer_t RX_Buffer;
@@ -88,15 +74,16 @@ uint8_t RX_Temp;
 uint8_t RX_Lines;
 uint8_t Recevied_Data[RING_BUFFER_SIZE];
 
-PID_t Distance_PID;
+PID_t DistancePID;
+
+Robot_t Robot;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_NVIC_Init(void);
 /* USER CODE BEGIN PFP */
-void Hold_Distance(float* Distance);
-void Robot_Operation();
+
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -142,12 +129,14 @@ int main(void)
   MX_NVIC_Init();
   /* USER CODE BEGIN 2 */
   HCSR04p_Init(&HCSR04p_front, &HCSR04p_TRIGGER_TIMER, HCSR04p_TRIG_CHANNEL, &HCSR04p_ECHO_TIMER, HCSR04p_START_CHANNEL, HCSR04p_STOP_CHANNEL);
+  PID_Init(&DistancePID, 100.0, 1.0, 10.0);
 
   Button_Init(&BlueKey, B1_GPIO_Port, B1_Pin, 20);
 
   L298N_MotorInit(&LeftMotor, LeftMotor_FWD_GPIO_Port, LeftMotor_FWD_Pin, LeftMotor_BWD_GPIO_Port, LeftMotor_BWD_Pin);
   L298N_MotorInit(&RightMotor, RightMotor_FWD_GPIO_Port, RightMotor_FWD_Pin, RightMotor_BWD_GPIO_Port, RightMotor_BWD_Pin);
-  PID_Init(&Distance_PID, 100.0, 1.0, 10.0);
+
+  Robot_Init(&Robot, false, false, false, 0.0, 0.0);
 
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_1); //Left motor speed
   HAL_TIM_PWM_Start(&htim3, TIM_CHANNEL_2); //Right motor speed
@@ -160,24 +149,23 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-
-	  Button_Task(&BlueKey); //Check button state
+	  Button_Task(&BlueKey, &Robot.Enable); //Check button state
 
 	  if(RX_Lines > 0)
 	  {
 		  Parser_TakeLine(&RX_Buffer, Recevied_Data);
 		  RX_Lines--;
-		  Parser_Parse(Recevied_Data);
+		  Parser_Parse(&Robot, Recevied_Data);
 	  }
-	  if(RobotEnable)
+	  if(Robot.Enable)
 	  {
-		  Robot_Operation();
+	      HCSR04p_ReadFloat(&HCSR04p_front, &Robot.ReadDistance_f);
+		  L298N_MotorTask(&Robot, &LeftMotor, &RightMotor, &DistancePID, &RX_Buffer);
 	  }
 	  else
 	  {
 		  Move_Stop(&LeftMotor, &RightMotor);
 	  }
-
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
@@ -252,7 +240,7 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 	{
 		if (htim->Channel == HAL_TIM_ACTIVE_CHANNEL_2)
 		{
-			HCSR04p_InteruptHandler(&HCSR04p_front);
+			HCSR04p_InteruptHandler(&HCSR04p_front, &Robot.ReadDistanceEnable);
 		}
 	}
 }
@@ -269,28 +257,16 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 		{
 			if(RB_OK == RB_Write(&RX_Buffer, RX_Temp))
 			{
-				HAL_GPIO_TogglePin(LD2_GPIO_Port, LD2_Pin);
-
 				if(RX_Temp == END_LINE)
 				{
 					RX_Lines++;
 				}
-
 			}
-
 		}
 
 		Status_RX = HAL_UART_Receive_IT(&huart1, &RX_Temp, 1);
 	}
 }
-
-void Robot_Operation()
-{
-	HCSR04p_ReadFloat(&HCSR04p_front, &Distance_f);
-	L298N_MotorTask(&LeftMotor, &RightMotor, &Distance_PID);
-}
-
-
 
 /* USER CODE END 4 */
 

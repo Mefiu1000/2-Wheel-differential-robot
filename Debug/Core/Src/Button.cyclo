@@ -1,5 +1,0 @@
-../Core/Src/Button.c:12:6:Button_Init	1
-../Core/Src/Button.c:22:6:Button_IdleRoutine	2
-../Core/Src/Button.c:32:6:Button_DebounceRoutine	3
-../Core/Src/Button.c:52:6:Button_PressedRoutine	2
-../Core/Src/Button.c:62:6:Button_Task	5
