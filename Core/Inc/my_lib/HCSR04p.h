@@ -27,8 +27,8 @@ typedef struct
 
 void HCSR04p_Init(HCSR04p_t *hcsr04p,  TIM_HandleTypeDef *timer_trigger, uint32_t Trigger_TimChannel, TIM_HandleTypeDef *timer_echo,
 		uint32_t Echo_TimChannel_Start, uint32_t Echo_TimChannel_Stop);
-void HCSR04p_ReadInteger(HCSR04p_t *hcsr04p, uint16_t *Read_distance);
-void HCSR04p_ReadFloat(HCSR04p_t *hcsr04p, float *Read_distance);
+void HCSR04p_ReadInteger(HCSR04p_t* hcsr04p, uint16_t* ReadDistance);
+void HCSR04p_ReadFloat(HCSR04p_t* hcsr04p, float *ReadDistance);
 void HCSR04p_InteruptHandler(HCSR04p_t *hcsr04p, bool* ReadDistanceEnable);
 void HCSR04p_Read(uint16_t *Read_distance);
 

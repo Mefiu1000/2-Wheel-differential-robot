@@ -27,8 +27,8 @@ typedef struct
 }RingBuffer_t;
 
 
-RB_Status RB_Write(RingBuffer_t* Buff, uint8_t Value);
-RB_Status RB_Read(RingBuffer_t* Buff, uint8_t* Value);
+RB_Status RB_Write(RingBuffer_t* Buff, uint8_t ReceivedValue);
+RB_Status RB_Read(RingBuffer_t* ReadBuff, uint8_t* WriteToValue);
 void RB_Flush(RingBuffer_t* Buff);
 
 

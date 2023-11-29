@@ -30,6 +30,7 @@
 #define HOLD_DISTANCE 	0x48 //H
 #define WRONG_DATA 		0x00
 
+
 typedef enum
 {
 	OPERATION = 0,

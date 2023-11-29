@@ -234,6 +234,15 @@ static void MX_NVIC_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+
+/** HAL_TIM_IC_CaptureCallback
+ * @brief Used to detect and handle falling
+ * edge of signal coming from HCSR04p sensor.
+ *
+ * @param htim pointer to structure that contains Timer configuration.
+ *
+ * @retval None.
+ * */
 void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 {
 	if (htim == HCSR04p_front.htim_echo)
@@ -245,6 +254,13 @@ void HAL_TIM_IC_CaptureCallback(TIM_HandleTypeDef *htim)
 	}
 }
 
+/** HAL_UART_RxCpltCallback
+ * @brief Used to save incoming data from HC-05 BT module to buffer.
+ *
+ * @param huart pointer to structure that contains UART configuration.
+ *
+ * @retval None.
+ * */
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 	if(huart->Instance == USART1)

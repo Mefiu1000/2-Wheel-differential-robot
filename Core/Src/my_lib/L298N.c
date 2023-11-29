@@ -2,7 +2,7 @@
  * Motors.c
  *
  *  Created on: Nov 21, 2023
- *      Author: akun1
+ *      Author: Sebastian Sosnowski
  */
 #include "my_lib/L298N.h"
 
@@ -14,7 +14,24 @@
 #define TIM_LEFTMOTOR_CHANNEL 	CCR1
 #define TIM_RIGHTMOTOR 			TIM3
 #define TIM_RIGHTMOTOR_CHANNEL 	CCR2
+//lib constants
+#define CHANGE_TO_FORWARD 1
+#define CHANGE_TO_BACKWARD -1
+#define DONT_CHANGE 0
+#define STAY 0
+#define ERROR 255
 
+/** L298N_MotorInit
+ * @brief Motor combined with L298N driver configuration initialization.
+ *
+ * @param motor pointer to structure that contains Motor configuration.
+ * @param MotorForward_Port pointer to motor forward signal port.
+ * @param MotorForward_Pin motor forward signal port bit.
+ * @param MotorBackward_Port pointer to motor backward signal port.
+ * @param MotorBackward_Pin motor backward signal port bit.
+ *
+ * @retval None.
+ * */
 void L298N_MotorInit(Motor_t* motor, GPIO_TypeDef* MotorForward_Port, uint16_t MotorForward_Pin,
 		GPIO_TypeDef* MotorBackward_Port, uint16_t MotorBackward_Pin)
 {
@@ -27,9 +44,20 @@ void L298N_MotorInit(Motor_t* motor, GPIO_TypeDef* MotorForward_Port, uint16_t M
 	motor->MotorBackward_Pin = MotorBackward_Pin;
 }
 
-static void L298N_MotorOperationRoutine(bool* Motor_Action_Flag, Motor_t* Leftmotor, Motor_t* Rightmotor)
+/** L298N_MotorOperationRoutine
+ * @brief Motor operation routine state i.e. when no command is handled.
+ * If new command comes, state is changed to CHANGE_OPERATION
+ * and last state is saved in motors configurations.
+ *
+ * @param MotorCommand pointer to variable which informs that new command was send via BT.
+ * @param Leftmotor pointer to structure that contains left motor configuration.
+ * @param Rightmotor pointer to structure that contains right motor configuration.
+ *
+ * @retval None.
+ * */
+static void L298N_MotorOperationRoutine(bool* MotorCommand, Motor_t* Leftmotor, Motor_t* Rightmotor)
 {
-	if(*Motor_Action_Flag == true)
+	if(*MotorCommand == true)
 	{
 		Leftmotor->LastState = Leftmotor->State;
 		Rightmotor->LastState = Leftmotor->State;
@@ -39,6 +67,15 @@ static void L298N_MotorOperationRoutine(bool* Motor_Action_Flag, Motor_t* Leftmo
 	}
 }
 
+/** Motor_CalculateSpeed
+ * @brief Converts speed digits sent in char to integer value and concatenate them.
+ *
+ * @param num_100 hundredths digit.
+ * @param num_10 tenths digit.
+ * @param num_1 ones digit.
+ *
+ * @retval Speed value written to TIM_PWM modulation register.
+ * */
 static uint16_t Motor_CalculateSpeed(uint8_t num_100,uint8_t num_10, uint8_t num_1)
 {
 	uint16_t Speed;
@@ -48,7 +85,19 @@ static uint16_t Motor_CalculateSpeed(uint8_t num_100,uint8_t num_10, uint8_t num
 	return Speed;
 }
 
-static void L298N_MotorChangeOperationRoutine(uint8_t* HC05_Command, bool* Motor_Action_Flag, Motor_t* Leftmotor, Motor_t* Rightmotor, RingBuffer_t* RX_Buff)
+/** L298N_MotorChangeOperationRoutine
+ * @brief Motor change operation routine state i.e. when command was sent
+ * and needs to be handled by proper functionality or other state.
+ *
+ * @param HC05_Command pointer to table that contains received command.
+ * @param MotorCommand pointer to variable which informs that new command was sent via BT.
+ * @param Leftmotor pointer to structure that contains left motor configuration.
+ * @param Rightmotor pointer to structure that contains right motor configuration.
+ * @param RX_Buff pointer to structure that contains receive ring buffer configuration.
+ *
+ * @retval None.
+ * */
+static void L298N_MotorChangeOperationRoutine(uint8_t* HC05_Command, bool* MotorCommand, Motor_t* Leftmotor, Motor_t* Rightmotor, RingBuffer_t* RX_Buff)
 {
 	uint8_t State = OPERATION;
 
@@ -85,37 +134,53 @@ static void L298N_MotorChangeOperationRoutine(uint8_t* HC05_Command, bool* Motor
 
 	Leftmotor->State = State;
 	Rightmotor->State = State;
-	*Motor_Action_Flag = false;
+	*MotorCommand = false;
 }
 
-// FWD - BWD = 1 - (-1) = 2
-// FWD - S = 1 - 0 = 1
-// BWD - FWD = -1 - 1 = -2
-//BWD - S = -1 - 0 = -1
-// S - FWD = -1
+/** CheckDirection
+ * @brief Function that compare actual moving direction
+ * with new direction based on new motor speed.
+ *
+ * @param prev_dir value with actual moving direction.
+ * @param dir value with new moving direction.
+ *
+ * @retval Move direction change.
+ * */
 static int8_t CheckDirection(int8_t prev_dir, int8_t dir)
 {
 	int8_t result = dir - prev_dir;
 
-	if(result == 0) return 0; //same dir
+	if(result == 0) return DONT_CHANGE; //same dir
 
-	if(dir != 0) //not stay
+	if(dir != STAY) //not stay
 	{
-		if(result > 0) return 1; // change direction to forward
-		else if(result < 0) return -1;	// change direction to backward
+		if(result > 0) return CHANGE_TO_FORWARD; // change direction to forward
+		else if(result < 0) return CHANGE_TO_BACKWARD;	// change direction to backward
 	}
 	else
 	{
-		if(result > 0) return -1;  // S - BWD = 1
-		else if(result < 0) return 1; // S - FWD = -1
+		if(result > 0) return CHANGE_TO_BACKWARD;  // S - BWD = 1
+		else if(result < 0) return CHANGE_TO_FORWARD; // S - FWD = -1
 	}
 
-	return -2; //error
+	return ERROR; //error
 }
 
+/** L298N_MotorHoldDistanceRoutine
+ * @brief Motor hold distance routine state i.e. robot tries
+ * to maintain set distance from object in front of it. PID regulator is used to determine speed changes.
+ * New speed and/or direction is applied only after sensor distance is updated.
+ *
+ * @param Robot pointer to structure that contains Robot configuration.
+ * @param Leftmotor pointer to structure that contains left motor configuration.
+ * @param Rightmotor pointer to structure that contains right motor configuration.
+ * @param PID pointer to structure that contains PID regulator configuration.
+ *
+ * @retval None.
+ * */
 static void L298N_MotorHoldDistanceRoutine(Robot_t* Robot, Motor_t* Leftmotor, Motor_t* Rightmotor, PID_t* PID)
 {
-	if(Robot->Motor_Action_Flag == true)
+	if(Robot->MotorCommand == true)
 	{
 		Leftmotor->LastState = Leftmotor->State;
 		Rightmotor->LastState = Leftmotor->State;
@@ -128,7 +193,7 @@ static void L298N_MotorHoldDistanceRoutine(Robot_t* Robot, Motor_t* Leftmotor, M
 
 	float error;
 	int16_t MotorSpeed;
-	int8_t direction = 0;
+	int8_t direction = DONT_CHANGE;
 	error = Robot->ReadDistance_f - Robot->HoldDistance;
 	PID->error_integral += error;
 	PID->error_derivative = (PID->previous_error - error);
@@ -136,8 +201,8 @@ static void L298N_MotorHoldDistanceRoutine(Robot_t* Robot, Motor_t* Leftmotor, M
 
 	MotorSpeed = round(PID->P * error + PID->I * PID->error_integral + PID->D * PID->error_derivative);
 
-	if(MotorSpeed > 0) direction = 1;
-	else if(MotorSpeed < 0) direction = -1;
+	if(MotorSpeed > 0) direction = CHANGE_TO_FORWARD;
+	else if(MotorSpeed < 0) direction = CHANGE_TO_BACKWARD;
 
 	MotorSpeed = abs(MotorSpeed); //set to positive value cuz its value for TIM->CCR
 
@@ -146,14 +211,14 @@ static void L298N_MotorHoldDistanceRoutine(Robot_t* Robot, Motor_t* Leftmotor, M
 
 	switch(CheckDirection(PID->previous_direction, direction))
 	{
-	case 0:
+	case DONT_CHANGE:
 		Motor_SetSpeed(MotorSpeed, MotorSpeed);
 		break;
-	case 1:
+	case CHANGE_TO_FORWARD:
 		Motor_SetSpeed(MotorSpeed, MotorSpeed);
 		Move_Forward(Leftmotor, Rightmotor);
 		break;
-	case -1:
+	case CHANGE_TO_BACKWARD:
 		Motor_SetSpeed(MotorSpeed, MotorSpeed);
 		Move_Backward(Leftmotor, Rightmotor);
 		break;
@@ -165,15 +230,26 @@ static void L298N_MotorHoldDistanceRoutine(Robot_t* Robot, Motor_t* Leftmotor, M
 	Robot->ReadDistanceEnable = false;
 }
 
+/** L298N_MotorTask
+ * @brief Main task where motor states functions are executed.
+ *
+ * @param Robot pointer to structure that contains Robot configuration.
+ * @param Leftmotor pointer to structure that contains left motor configuration.
+ * @param Rightmotor pointer to structure that contains right motor configuration.
+ * @param PID pointer to structure that contains PID regulator configuration.
+ * @param RX_Buff pointer to structure that contains receive ring buffer configuration.
+ *
+ * @retval None.
+ * */
 void L298N_MotorTask(Robot_t* Robot, Motor_t* Leftmotor, Motor_t* Rightmotor, PID_t* PID, RingBuffer_t* RX_Buff)
 {
 	switch(Leftmotor->State)
 	{
 	case OPERATION:
-		L298N_MotorOperationRoutine(&Robot->Motor_Action_Flag, Leftmotor, Rightmotor);
+		L298N_MotorOperationRoutine(&Robot->MotorCommand, Leftmotor, Rightmotor);
 		break;
 	case CHANGE_OPERATION:
-		L298N_MotorChangeOperationRoutine(Robot->HC05_Command ,&Robot->Motor_Action_Flag,Leftmotor, Rightmotor, RX_Buff);
+		L298N_MotorChangeOperationRoutine(Robot->HC05_Command ,&Robot->MotorCommand,Leftmotor, Rightmotor, RX_Buff);
 		break;
 	case MAINTAIN_DISTANCE:
 		L298N_MotorHoldDistanceRoutine(Robot, Leftmotor, Rightmotor, PID);
@@ -181,6 +257,14 @@ void L298N_MotorTask(Robot_t* Robot, Motor_t* Leftmotor, Motor_t* Rightmotor, PI
 	}
 }
 
+/** Move_Forward
+ * @brief Set motors to move forward with set speed.
+ *
+ * @param Leftmotor pointer to structure that contains left motor configuration.
+ * @param Rightmotor pointer to structure that contains right motor configuration.
+ *
+ * @retval None.
+ * */
 void Move_Forward(Motor_t* Leftmotor, Motor_t* Rightmotor)
 {
 	uint16_t left_speed, right_speed;
@@ -200,6 +284,14 @@ void Move_Forward(Motor_t* Leftmotor, Motor_t* Rightmotor)
 	Motor_SetSpeed(left_speed, right_speed);
 }
 
+/** Move_Backward
+ * @brief Set motors to move backward with set speed.
+ *
+ * @param Leftmotor pointer to structure that contains left motor configuration.
+ * @param Rightmotor pointer to structure that contains right motor configuration.
+ *
+ * @retval None.
+ * */
 void Move_Backward(Motor_t* Leftmotor, Motor_t* Rightmotor)
 {
 	uint16_t left_speed, right_speed;
@@ -219,6 +311,14 @@ void Move_Backward(Motor_t* Leftmotor, Motor_t* Rightmotor)
 	Motor_SetSpeed(left_speed, right_speed);
 }
 
+/** Move_Left
+ * @brief Set motors to turn left with set speed.
+ *
+ * @param Leftmotor pointer to structure that contains left motor configuration.
+ * @param Rightmotor pointer to structure that contains right motor configuration.
+ *
+ * @retval None.
+ * */
 void Move_Left(Motor_t* Leftmotor, Motor_t* Rightmotor)
 {
 	uint16_t left_speed, right_speed;
@@ -238,6 +338,14 @@ void Move_Left(Motor_t* Leftmotor, Motor_t* Rightmotor)
 	Motor_SetSpeed(left_speed, right_speed);
 }
 
+/** Move_Right
+ * @brief Set motors to turn right with set speed.
+ *
+ * @param Leftmotor pointer to structure that contains left motor configuration.
+ * @param Rightmotor pointer to structure that contains right motor configuration.
+ *
+ * @retval None.
+ * */
 void Move_Right(Motor_t* Leftmotor, Motor_t* Rightmotor)
 {
 	uint16_t left_speed, right_speed;
@@ -257,6 +365,14 @@ void Move_Right(Motor_t* Leftmotor, Motor_t* Rightmotor)
 	Motor_SetSpeed(left_speed, right_speed);
 }
 
+/** Move_Stop
+ * @brief Set motors to stop moving.
+ *
+ * @param Leftmotor pointer to structure that contains left motor configuration.
+ * @param Rightmotor pointer to structure that contains right motor configuration.
+ *
+ * @retval None.
+ * */
 void Move_Stop(Motor_t* Leftmotor, Motor_t* Rightmotor)
 {
 	HAL_GPIO_WritePin(Leftmotor->MotorForward_Port, Leftmotor->MotorForward_Pin, GPIO_PIN_RESET);
@@ -266,13 +382,29 @@ void Move_Stop(Motor_t* Leftmotor, Motor_t* Rightmotor)
 	HAL_GPIO_WritePin(Rightmotor->MotorBackward_Port, Rightmotor->MotorBackward_Pin, GPIO_PIN_RESET);
 }
 
+/** Motor_SetSpeed
+ * @brief Set motor speed value to timers PWM modulation.
+ *
+ * @param left_speed value for left motor.
+ * @param right_speed value for right motor.
+ *
+ * @retval None.
+ * */
 void Motor_SetSpeed(uint16_t left_speed, uint16_t right_speed)
 {
 	TIM_LEFTMOTOR->TIM_LEFTMOTOR_CHANNEL = left_speed;
 	TIM_RIGHTMOTOR->TIM_RIGHTMOTOR_CHANNEL = right_speed;
 }
 
-//Read set speed and change it to 100% for startup
+/** Motor_Startup
+ * @brief Read current speed and change it to 100% for startup.
+ * Function needed because of cheap motors used in project ;(.
+ *
+ * @param left_speed pointer to variable with speed value for left motor.
+ * @param right_speed pointer to variable with speed value for right motor.
+ *
+ * @retval None.
+ * */
 void Motor_Startup(uint16_t* left_speed, uint16_t* right_speed)
 {
 	//Read set speed
@@ -283,9 +415,19 @@ void Motor_Startup(uint16_t* left_speed, uint16_t* right_speed)
 	TIM_RIGHTMOTOR->TIM_RIGHTMOTOR_CHANNEL = MAX_SPEED;
 }
 
+/** PID_Init
+ * @brief Hold distance PID regulator configuration initialization.
+ *
+ * @param PID pointer to structure that contains PID regulator configuration.
+ * @param P value of proportional coefficient.
+ * @param I value of integral coefficient.
+ * @param D value of derivative coefficient.
+ *
+ * @retval None.
+ * */
 void PID_Init(PID_t* PID, float P, float I, float D)
 {
-	PID->previous_direction = 0;
+	PID->previous_direction = STAY;
 
 	PID->previous_error = 0.0;
 	PID->error_integral = 0.0;

@@ -18,7 +18,7 @@ typedef struct
 {
 	bool Enable;
 	bool ReadDistanceEnable;
-	bool Motor_Action_Flag;
+	bool MotorCommand;
 
 	float HoldDistance;
 	float ReadDistance_f;
@@ -26,6 +26,6 @@ typedef struct
 	uint8_t HC05_Command[RING_BUFFER_SIZE];
 }Robot_t;
 
-void Robot_Init(Robot_t* Robot, bool Enable, bool ReadDistanceEnable, bool Motor_Action_Flag, float HoldDistance, float ReadDistance_f);
+void Robot_Init(Robot_t* Robot, bool Enable, bool ReadDistanceEnable, bool MotorCommand, float HoldDistance, float ReadDistance_f);
 
 #endif /* INC_MY_LIB_ROBOT_H_ */

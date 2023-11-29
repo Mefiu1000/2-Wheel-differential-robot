@@ -2,7 +2,7 @@
  * utils.h
  *
  *  Created on: Nov 26, 2023
- *      Author: akun1
+ *      Author: Sebastian Sosnowski
  */
 
 #ifndef INC_MY_LIB_UTILS_H_
