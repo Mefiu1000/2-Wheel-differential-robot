@@ -3,6 +3,19 @@
 
 The project goal was to create a simple mobile robot with a use of 3D printing, which uses basic components commonly used in robotics.
 
+<p align="center">
+    <img src="./Images/Robot_real.jpg" width =600>
+</p>
+<p align="center">
+    Assembled robot
+</p>
+<p align="center">
+    <img src="./Images/Robot_fusion.png" width =600>
+</p>
+<p align="center">
+    3D model of the robot in Fusion 360
+</p>
+
 ## Components
 
 All devices are connected with wires. Mechanical parts are 3D printed in PLA and connected with M3 screws.
@@ -41,13 +54,17 @@ Used peripheriales:
     - Input capure to measure pulse width from distance sensor echo pin and convert it to distance value
 - USART
     - Bluetooth SPP communiation with HC-05 module to send commands from terminal
+
+ Both button and motors operation control are written with a use of simple "state machine" notion.
+ 
 ## Software
 
 - STM32CubeIDE with built-in CubeMX ver 1.13.2 - programming and configuration
 - Realterm - terminal to send commands via BT
 - Fusion 360 - 3D modeling
-## Commands
 
+## Bluetooth/serial Commands
+All commands must end with newline "**\n**" character.
 ```http
   Enable robot
 ```
@@ -77,7 +94,7 @@ Used peripheriales:
 | `HOLD=XX.X`      | `string` | Maintain distance from obstacle where **XX.X** is a numerical distance value |
 
 
-## Documentation
+## Peripherials documentation
 
 [Motor drawing](https://cdn.sparkfun.com/datasheets/Robotics/DG01D.pdf)
 
