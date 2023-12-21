@@ -1,4 +1,0 @@
-../Core/Src/my_lib/HCSR04p.c:24:6:HCSR04p_Init	24	static
-../Core/Src/my_lib/HCSR04p.c:51:6:HCSR04p_ReadInteger	16	static
-../Core/Src/my_lib/HCSR04p.c:64:6:HCSR04p_ReadFloat	16	static
-../Core/Src/my_lib/HCSR04p.c:77:6:HCSR04p_InteruptHandler	16	static

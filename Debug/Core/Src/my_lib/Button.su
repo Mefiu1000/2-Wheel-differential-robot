@@ -1,5 +1,0 @@
-../Core/Src/my_lib/Button.c:19:6:Button_Init	24	static
-../Core/Src/my_lib/Button.c:37:13:Button_IdleRoutine	16	static
-../Core/Src/my_lib/Button.c:55:13:Button_DebounceRoutine	16	static
-../Core/Src/my_lib/Button.c:96:13:Button_PressedRoutine	16	static
-../Core/Src/my_lib/Button.c:114:6:Button_Task	16	static

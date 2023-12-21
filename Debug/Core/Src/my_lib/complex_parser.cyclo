@@ -1,6 +1,0 @@
-../Core/Src/my_lib/complex_parser.c:20:6:Parser_TakeLine	3
-../Core/Src/my_lib/complex_parser.c:51:13:Parser_ParseMOVE	7
-../Core/Src/my_lib/complex_parser.c:103:13:Parser_ParseSPEED	8
-../Core/Src/my_lib/complex_parser.c:171:13:Parser_ParseHOLD	6
-../Core/Src/my_lib/complex_parser.c:211:13:Parser_ParseENABLE	6
-../Core/Src/my_lib/complex_parser.c:253:6:Parser_Parse	5
