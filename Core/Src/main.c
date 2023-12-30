@@ -18,6 +18,7 @@
 /* USER CODE END Header */
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
+#include "i2c.h"
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
@@ -35,6 +36,7 @@
 #include "my_lib/utils.h"
 #include "my_lib/complex_parser.h"
 #include "my_lib/Robot.h"
+#include "my_lib/LSM6DS33.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -77,6 +79,9 @@ uint8_t Recevied_Data[RING_BUFFER_SIZE];
 PID_t DistancePID;
 
 Robot_t Robot;
+
+LSM6DS33_t LSM6DS33;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -124,10 +129,14 @@ int main(void)
   MX_TIM1_Init();
   MX_TIM3_Init();
   MX_USART1_UART_Init();
+  MX_I2C1_Init();
 
   /* Initialize interrupts */
   MX_NVIC_Init();
   /* USER CODE BEGIN 2 */
+
+  LSM6DS33_Init(&LSM6DS33, &hi2c1, LSM6DS33_SAD);
+
   HCSR04p_Init(&HCSR04p_front, &HCSR04p_TRIGGER_TIMER, HCSR04p_TRIG_CHANNEL, &HCSR04p_ECHO_TIMER, HCSR04p_START_CHANNEL, HCSR04p_STOP_CHANNEL);
   PID_Init(&DistancePID, 100.0, 1.0, 10.0);
 
@@ -143,12 +152,22 @@ int main(void)
 
   Status_RX = HAL_UART_Receive_IT(&huart1, &RX_Temp, 1);
 
+  uint8_t LSM6DS33_status;
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  LSM6DS33_status = LSM6DS33_DataStatus(&LSM6DS33);
+
+	  if(LSM6DS33_status == 3)
+	  {
+		  //read acc and gyro
+		  LSM6DS33_ReadAccAndGyroData(&LSM6DS33);
+
+	  }
 	  Button_Task(&BlueKey, &Robot.Enable); //Check button state
 
 	  if(RX_Lines > 0)

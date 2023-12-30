@@ -87,6 +87,10 @@ void Error_Handler(void);
 #define LeftMotor_BWD_GPIO_Port GPIOB
 #define HC05_RX_Pin GPIO_PIN_7
 #define HC05_RX_GPIO_Port GPIOB
+#define MinIMU_9_SCL_Pin GPIO_PIN_8
+#define MinIMU_9_SCL_GPIO_Port GPIOB
+#define MinIMU_9_SDA_Pin GPIO_PIN_9
+#define MinIMU_9_SDA_GPIO_Port GPIOB
 
 /* USER CODE BEGIN Private defines */
 
