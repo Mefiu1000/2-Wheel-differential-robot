@@ -81,6 +81,7 @@ PID_t DistancePID;
 Robot_t Robot;
 
 LSM6DS33_t LSM6DS33;
+char LSMM6DS33_Msg[50];
 
 /* USER CODE END PV */
 
@@ -166,6 +167,10 @@ int main(void)
 	  {
 		  //read acc and gyro
 		  LSM6DS33_ReadAccAndGyroData(&LSM6DS33);
+
+		  sprintf(LSMM6DS33_Msg,"%d %d %d %d %d %d\n", LSM6DS33.Acc_X, LSM6DS33.Acc_Y, LSM6DS33.Acc_Z,
+				  LSM6DS33.Gyro_X, LSM6DS33.Gyro_Y, LSM6DS33.Gyro_Z);
+		  UartLog(LSMM6DS33_Msg); //send data for visualisation program, comment if u dont use it
 
 	  }
 	  Button_Task(&BlueKey, &Robot.Enable); //Check button state
