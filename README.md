@@ -23,6 +23,7 @@ All devices are connected with wires. Mechanical parts are 3D printed in PLA and
 - Motor driver L298N
 - 2x The cheapest DC motors + wheels
 - Distance sensor HC-SR04p
+- IMU device MinIMU-9 v5 9DOF with LSM6DS33 and LIS3MDL
 - BT module HC-05
 - 2x Battery cells Li-ion Samsung INR18650-26J 2600mAh + basket
 - Ball Caster 1/2'' Pololu 953
@@ -42,6 +43,8 @@ All devices are connected with wires. Mechanical parts are 3D printed in PLA and
 - complex_parser.c/h 
 - HCSR04p.c/h 
 - L298N.c/h 
+- LSM6DS33.c/h
+- RingBuffer.c/h
 - Robot.c/h 
 - utils.c/h
 
@@ -54,6 +57,8 @@ Used peripheriales:
     - Input capure to measure pulse width from distance sensor echo pin and convert it to distance value
 - USART
     - Bluetooth SPP communiation with HC-05 module to send commands from terminal
+- I2C
+	- Read IMU device data
 
  Both button and motors operation control are written with a use of simple "state machine" notion.
  
@@ -101,6 +106,8 @@ All commands must end with newline "**\n**" character.
 [HC-05](https://components101.com/sites/default/files/component_datasheet/HC-05%20Datasheet.pdf)
 
 [HC-SR04](https://web.eece.maine.edu/~zhu/book/lab/HC-SR04%20User%20Manual.pdf)
+
+[LSM6DS33](https://www.pololu.com/file/0J1087/LSM6DS33.pdf)
 
 [L298N](https://cnc1.lv/PDF%20FILES/L298N%20Motor%20Driver%20manual.pdf)
 
